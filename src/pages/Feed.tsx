@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { MobileCard, MobileCardContent, MobileCardHeader, MobileCardTitle } from "@/components/ui/mobile-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { CreatePostDialog } from "@/components/CreatePostDialog";
 
 export default function Feed() {
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
+  const [posts, setPosts] = useState(feedPosts);
+  const [showCreatePost, setShowCreatePost] = useState(false);
 
   const feedPosts = [
     {

@@ -1,9 +1,14 @@
+import { useState } from "react";
 import { Activity, TrendingUp, Users, Calendar, Star, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MobileCard, MobileCardContent, MobileCardHeader, MobileCardTitle } from "@/components/ui/mobile-card";
 import { Badge } from "@/components/ui/badge";
+import { DetailDialog } from "@/components/ui/detail-dialog";
+import { useNavigate } from "react-router-dom";
 
 export default function Home() {
+  const navigate = useNavigate();
+  const [dialogData, setDialogData] = useState<any>(null);
   const dailyStats = [
     { label: "Pasos", value: "8,234", target: "10,000", icon: Activity, color: "text-primary" },
     { label: "Calorías", value: "320", target: "500", icon: TrendingUp, color: "text-secondary" },

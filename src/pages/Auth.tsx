@@ -6,10 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { DetailDialog } from "@/components/ui/detail-dialog";
+import { useNavigate } from "react-router-dom";
 
 export default function Auth() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [termsDialogOpen, setTermsDialogOpen] = useState(false);
+  const [privacyDialogOpen, setPrivacyDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -19,8 +26,104 @@ export default function Auth() {
     acceptPrivacy: false
   });
 
+  const { signUp, signIn } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async () => {
+    if (loading) return;
+
+    // Validaciones básicas
+    if (!formData.email || !formData.password) {
+      toast({
+        title: "Error",
+        description: "Por favor completa todos los campos requeridos",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (activeTab === "register") {
+      if (!formData.fullName) {
+        toast({
+          title: "Error", 
+          description: "El nombre completo es requerido",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        toast({
+          title: "Error",
+          description: "Las contraseñas no coinciden",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!formData.acceptTerms || !formData.acceptPrivacy) {
+        toast({
+          title: "Error",
+          description: "Debes aceptar los términos y la política de privacidad",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    setLoading(true);
+
+    try {
+      if (activeTab === "login") {
+        const { error } = await signIn(formData.email, formData.password);
+        if (error) {
+          toast({
+            title: "Error al iniciar sesión",
+            description: error.message === "Invalid login credentials" 
+              ? "Credenciales incorrectas. Verifica tu email y contraseña"
+              : error.message,
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "¡Bienvenido de nuevo!",
+            description: "Has iniciado sesión exitosamente"
+          });
+          navigate('/');
+        }
+      } else {
+        const { error } = await signUp(formData.email, formData.password, formData.fullName);
+        if (error) {
+          toast({
+            title: "Error al crear cuenta",
+            description: error.message === "User already registered"
+              ? "Ya existe una cuenta con este email"
+              : error.message,
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "¡Cuenta creada exitosamente!",
+            description: "Verifica tu email para activar tu cuenta"
+          });
+          setActiveTab("login");
+          setFormData(prev => ({ ...prev, password: "", confirmPassword: "" }));
+        }
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error inesperado",
+        description: "Ocurrió un error. Intenta nuevamente",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const socialAuthOptions = [
@@ -164,7 +267,15 @@ export default function Auth() {
                       onCheckedChange={(checked) => handleInputChange("acceptTerms", checked)}
                     />
                     <Label htmlFor="acceptTerms" className="text-sm leading-relaxed">
-                      Acepto los <span className="text-primary underline">términos y condiciones</span> del servicio
+                      Acepto los{" "}
+                      <button
+                        type="button"
+                        className="text-primary underline hover:no-underline"
+                        onClick={() => setTermsDialogOpen(true)}
+                      >
+                        términos y condiciones
+                      </button>{" "}
+                      del servicio
                     </Label>
                   </div>
                   <div className="flex items-start space-x-2">
@@ -174,16 +285,29 @@ export default function Auth() {
                       onCheckedChange={(checked) => handleInputChange("acceptPrivacy", checked)}
                     />
                     <Label htmlFor="acceptPrivacy" className="text-sm leading-relaxed">
-                      Acepto la <span className="text-primary underline">política de privacidad</span> y el tratamiento de mis datos
+                      Acepto la{" "}
+                      <button
+                        type="button"
+                        className="text-primary underline hover:no-underline"
+                        onClick={() => setPrivacyDialogOpen(true)}
+                      >
+                        política de privacidad
+                      </button>{" "}
+                      y el tratamiento de mis datos
                     </Label>
                   </div>
                 </div>
               )}
 
               {/* Botón principal */}
-              <Button className="w-full bg-primary text-primary-foreground" size="lg">
-                {activeTab === "login" ? "Iniciar Sesión" : "Crear Cuenta"}
-                <ArrowRight className="h-4 w-4 ml-2" />
+              <Button 
+                className="w-full bg-primary text-primary-foreground" 
+                size="lg"
+                onClick={handleSubmit}
+                disabled={loading}
+              >
+                {loading ? "Procesando..." : (activeTab === "login" ? "Iniciar Sesión" : "Crear Cuenta")}
+                {!loading && <ArrowRight className="h-4 w-4 ml-2" />}
               </Button>
 
               {/* Separador */}
@@ -265,18 +389,22 @@ export default function Auth() {
           </MobileCardContent>
         </MobileCard>
 
-        {/* Nota sobre funcionalidad */}
-        <MobileCard variant="warning">
-          <MobileCardContent className="text-center">
-            <h3 className="font-semibold mb-2">🚧 Funcionalidad en Desarrollo</h3>
-            <p className="text-sm text-muted-foreground mb-3">
-              Para habilitar el registro y autenticación completos, necesitas conectar tu proyecto a Supabase.
-            </p>
-            <Button variant="outline" size="sm">
-              Configurar Supabase
-            </Button>
-          </MobileCardContent>
-        </MobileCard>
+        {/* Nota sobre funcionalidad - Remove this section */}
+
+        {/* Terms and Privacy Dialogs */}
+        <DetailDialog
+          isOpen={termsDialogOpen}
+          onClose={() => setTermsDialogOpen(false)}
+          title="Términos y Condiciones"
+          type="terms"
+        />
+        
+        <DetailDialog
+          isOpen={privacyDialogOpen}
+          onClose={() => setPrivacyDialogOpen(false)}
+          title="Política de Privacidad"
+          type="privacy"
+        />
       </div>
     </div>
   );
