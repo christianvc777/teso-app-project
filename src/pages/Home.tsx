@@ -22,10 +22,65 @@ export default function Home() {
   ];
 
   const recentAchievements = [
-    { title: "Primera Semana Completa", description: "¡7 días consecutivos!", date: "Ayer", type: "success" },
-    { title: "Meta de Pasos", description: "10,000 pasos alcanzados", date: "Hace 2 días", type: "primary" },
-    { title: "Nuevo PR", description: "Personal record en sentadillas", date: "Hace 3 días", type: "accent" },
+    { 
+      title: "Primera Semana Completa", 
+      description: "¡7 días consecutivos!", 
+      date: "Ayer", 
+      type: "success",
+      points: 500,
+      streak: 7,
+      fullDescription: "Has completado tu primera semana de entrenamiento consecutivo. ¡Esto es solo el comienzo de tu transformación!"
+    },
+    { 
+      title: "Meta de Pasos", 
+      description: "10,000 pasos alcanzados", 
+      date: "Hace 2 días", 
+      type: "primary",
+      points: 200,
+      streak: 3,
+      fullDescription: "Alcanzaste la meta diaria de 10,000 pasos. Mantén el ritmo y pronto verás grandes mejoras en tu resistencia."
+    },
+    { 
+      title: "Nuevo PR", 
+      description: "Personal record en sentadillas", 
+      date: "Hace 3 días", 
+      type: "accent",
+      points: 300,
+      streak: 1,
+      fullDescription: "¡Nuevo récord personal! Has superado tu marca anterior en sentadillas. El progreso constante es la clave del éxito."
+    },
   ];
+
+  const handleStatClick = (stat: any) => {
+    const statDetails = {
+      ...stat,
+      percentage: Math.round((parseInt(stat.value.replace(',', '')) / parseInt(stat.target.replace(',', ''))) * 100),
+      average: stat.label === "Pasos" ? "7,856" : stat.label === "Calorías" ? "285" : "38"
+    };
+    setDialogData({
+      title: `Detalles de ${stat.label}`,
+      type: 'stat',
+      data: statDetails,
+      isOpen: true
+    });
+  };
+
+  const handleAchievementClick = (achievement: any) => {
+    setDialogData({
+      title: achievement.title,
+      type: 'achievement',
+      data: achievement,
+      isOpen: true
+    });
+  };
+
+  const handleQuickAction = (path: string) => {
+    navigate(path);
+  };
+
+  const handleCommunityClick = () => {
+    navigate('/community');
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -43,7 +98,12 @@ export default function Home() {
           <h2 className="text-xl font-bold mb-4">Progreso de Hoy</h2>
           <div className="grid grid-cols-1 gap-4">
             {dailyStats.map((stat, index) => (
-              <MobileCard key={index} variant="elevated">
+              <MobileCard 
+                key={index} 
+                variant="elevated"
+                className="cursor-pointer transition-all hover:shadow-lg"
+                onClick={() => handleStatClick(stat)}
+              >
                 <MobileCardContent className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <stat.icon className={`h-8 w-8 ${stat.color}`} />
@@ -74,7 +134,12 @@ export default function Home() {
           <h2 className="text-xl font-bold mb-4">Acciones Rápidas</h2>
           <div className="grid grid-cols-1 gap-4">
             {quickActions.map((action, index) => (
-              <MobileCard key={index} variant={action.variant}>
+              <MobileCard 
+                key={index} 
+                variant={action.variant}
+                className="cursor-pointer transition-all hover:shadow-lg"
+                onClick={() => handleQuickAction(action.path)}
+              >
                 <MobileCardContent className="flex items-center justify-between">
                   <div>
                     <h3 className="font-semibold">{action.title}</h3>
@@ -92,7 +157,11 @@ export default function Home() {
           <h2 className="text-xl font-bold mb-4">Logros Recientes</h2>
           <div className="space-y-3">
             {recentAchievements.map((achievement, index) => (
-              <MobileCard key={index}>
+              <MobileCard 
+                key={index}
+                className="cursor-pointer transition-all hover:shadow-lg"
+                onClick={() => handleAchievementClick(achievement)}
+              >
                 <MobileCardContent className="flex items-start space-x-3">
                   <div className="flex-shrink-0">
                     <Star className="h-6 w-6 text-warning" />
@@ -116,7 +185,11 @@ export default function Home() {
         <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold">Comunidad Activa</h2>
-            <Button variant="ghost" size="sm">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={handleCommunityClick}
+            >
               Ver todo <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
@@ -142,6 +215,17 @@ export default function Home() {
             </MobileCardContent>
           </MobileCard>
         </section>
+
+        {/* Detail Dialog */}
+        {dialogData && (
+          <DetailDialog
+            isOpen={dialogData.isOpen}
+            onClose={() => setDialogData(null)}
+            title={dialogData.title}
+            type={dialogData.type}
+            data={dialogData.data}
+          />
+        )}
       </div>
     </div>
   );

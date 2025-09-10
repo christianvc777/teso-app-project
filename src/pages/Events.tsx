@@ -4,10 +4,13 @@ import { Button } from "@/components/ui/button";
 import { MobileCard, MobileCardContent, MobileCardHeader, MobileCardTitle, MobileCardDescription } from "@/components/ui/mobile-card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { DetailDialog } from "@/components/ui/detail-dialog";
 
 export default function Events() {
   const [activeFilter, setActiveFilter] = useState<"all" | "nearby" | "virtual" | "joined">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [registeredEvents, setRegisteredEvents] = useState<Set<number>>(new Set([2])); // User already registered for event 2
+  const [dialogData, setDialogData] = useState<any>(null);
 
   const events = [
     {
@@ -133,6 +136,36 @@ export default function Events() {
     }
   };
 
+  const handleRegisterToggle = (eventId: number) => {
+    setRegisteredEvents(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(eventId)) {
+        newSet.delete(eventId);
+      } else {
+        newSet.add(eventId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleEventClick = (event: any) => {
+    setDialogData({
+      title: event.title,
+      type: 'event',
+      data: {
+        ...event,
+        fullDescription: event.description,
+        modalidad: event.type,
+        fecha: event.date,
+        horario: event.time,
+        ubicacion: event.location,
+        inscritos: event.attendees,
+        precio: event.price
+      },
+      isOpen: true
+    });
+  };
+
   const filteredEvents = events.filter(event => {
     const matchesFilter = activeFilter === "all" || 
       (activeFilter === "nearby" && parseFloat(event.distance.split(' ')[0]) < 5) ||
@@ -216,7 +249,7 @@ export default function Events() {
         {/* Lista de eventos */}
         <div className="space-y-4">
           {filteredEvents.map((event) => (
-            <MobileCard key={event.id} variant={event.isJoined ? "success" : "elevated"}>
+            <MobileCard key={event.id} variant={registeredEvents.has(event.id) ? "success" : "elevated"}>
               <MobileCardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -231,7 +264,7 @@ export default function Events() {
                       <Badge variant="outline" className={getTypeColor(event.type)}>
                         {event.type}
                       </Badge>
-                      {event.isJoined && (
+                      {registeredEvents.has(event.id) && (
                         <Badge className="bg-success text-success-foreground">
                           ✓ Inscrito
                         </Badge>
@@ -290,10 +323,11 @@ export default function Events() {
                     </div>
                     <Button 
                       size="sm" 
-                      variant={event.isJoined ? "outline" : "default"}
-                      className={event.isJoined ? "" : "bg-primary"}
+                      variant={registeredEvents.has(event.id) ? "outline" : "default"}
+                      className={registeredEvents.has(event.id) ? "" : "bg-primary"}
+                      onClick={() => registeredEvents.has(event.id) ? handleEventClick(event) : handleRegisterToggle(event.id)}
                     >
-                      {event.isJoined ? "Ver detalles" : "Inscribirse"}
+                      {registeredEvents.has(event.id) ? "Ver detalles" : "Inscribirse"}
                     </Button>
                   </div>
                 </div>
@@ -310,6 +344,17 @@ export default function Events() {
               Intenta ajustar los filtros o búsqueda
             </p>
           </div>
+        )}
+
+        {/* Event Details Dialog */}
+        {dialogData && (
+          <DetailDialog
+            isOpen={dialogData.isOpen}
+            onClose={() => setDialogData(null)}
+            title={dialogData.title}
+            type={dialogData.type}
+            data={dialogData.data}
+          />
         )}
       </div>
     </div>

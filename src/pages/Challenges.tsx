@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button";
 import { MobileCard, MobileCardContent, MobileCardHeader, MobileCardTitle, MobileCardDescription } from "@/components/ui/mobile-card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { DetailDialog } from "@/components/ui/detail-dialog";
 
 export default function Challenges() {
+  const [joinedChallenges, setJoinedChallenges] = useState<Set<number>>(new Set([2])); // User already joined challenge 2
+  const [dialogData, setDialogData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"trending" | "myProgress" | "completed">("trending");
 
   const trendingChallenges = [
@@ -95,7 +98,58 @@ export default function Challenges() {
       category: "Introducción",
       progress: 100,
       isJoined: true,
-      completedDate: "Hace 5 días"
+      completedDate: "Hace 5 días",
+      challengeName: "Primera Semana Activa",
+      score: 95,
+      rank: 8
+    },
+    {
+      id: 7,
+      title: "Cardio Intenso 21 Días",
+      description: "Ejercicio cardiovascular diario",
+      participants: 2156,
+      duration: "21 días", 
+      difficulty: "Intermedio",
+      reward: "Trofeo de Resistencia",
+      category: "Cardio",
+      progress: 100,
+      isJoined: true,
+      completedDate: "Hace 12 días",
+      challengeName: "Cardio Intenso 21 Días",
+      score: 88,
+      rank: 15
+    },
+    {
+      id: 8,
+      title: "Flexibilidad Total",
+      description: "Rutinas de stretching y yoga",
+      participants: 1547,
+      duration: "14 días",
+      difficulty: "Principiante", 
+      reward: "Insignia Flexibilidad",
+      category: "Bienestar",
+      progress: 100,
+      isJoined: true,
+      completedDate: "Hace 20 días",
+      challengeName: "Flexibilidad Total",
+      score: 92,
+      rank: 12
+    },
+    {
+      id: 9,
+      title: "Nutrición Saludable",
+      description: "Hábitos alimenticios por 30 días",
+      participants: 3241,
+      duration: "30 días",
+      difficulty: "Intermedio",
+      reward: "Medalla Nutrición",
+      category: "Nutrición",
+      progress: 100,
+      isJoined: true,
+      completedDate: "Hace 35 días",
+      challengeName: "Nutrición Saludable",
+      score: 97,
+      rank: 5
     }
   ];
 
@@ -118,6 +172,53 @@ export default function Challenges() {
       case "Introducción": return "🌟";
       default: return "🎯";
     }
+  };
+
+  const handleJoinToggle = (challengeId: number) => {
+    setJoinedChallenges(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(challengeId)) {
+        newSet.delete(challengeId);
+      } else {
+        newSet.add(challengeId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleViewDetails = (challenge: any) => {
+    setDialogData({
+      title: challenge.title,
+      type: 'challenge',
+      data: {
+        ...challenge,
+        emoji: challenge.category === 'Cardio' ? '🏃' : 
+              challenge.category === 'Fuerza' ? '💪' :
+              challenge.category === 'Actividad' ? '🚶‍♂️' :
+              challenge.category === 'Hábitos' ? '🌅' :
+              challenge.category === 'Bienestar' ? '💧' : '🎯',
+        fullDescription: `${challenge.description}. Este reto está diseñado para ayudarte a mejorar tu condición física y bienestar general.`,
+        daysRemaining: challenge.totalDays - challenge.daysCompleted || 15,
+        currentStreak: challenge.streak || 3,
+        progress: challenge.progress
+      },
+      isOpen: true
+    });
+  };
+
+  const handleViewCertificate = (challenge: any) => {
+    setDialogData({
+      title: "Certificado de Logro",
+      type: 'certificate',
+      data: {
+        challengeName: challenge.challengeName || challenge.title,
+        completedDate: challenge.completedDate,
+        duration: challenge.duration,
+        score: challenge.score || 95,
+        rank: challenge.rank || 10
+      },
+      isOpen: true
+    });
   };
 
   return (
@@ -234,9 +335,13 @@ export default function Challenges() {
                         <Trophy className="h-4 w-4" />
                         <span>{challenge.reward}</span>
                       </div>
-                      <Button size="sm" className="bg-primary">
+                      <Button 
+                        size="sm" 
+                        className={joinedChallenges.has(challenge.id) ? "bg-destructive hover:bg-destructive/90" : "bg-primary"}
+                        onClick={() => handleJoinToggle(challenge.id)}
+                      >
                         <Play className="h-4 w-4 mr-1" />
-                        Unirse
+                        {joinedChallenges.has(challenge.id) ? "Abandonar" : "Unirse"}
                       </Button>
                     </div>
                   </div>
@@ -292,7 +397,11 @@ export default function Challenges() {
                         <Calendar className="h-4 w-4" />
                         <span>{challenge.totalDays - challenge.daysCompleted} días restantes</span>
                       </div>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleViewDetails(challenge)}
+                      >
                         Ver detalles
                       </Button>
                     </div>
@@ -335,7 +444,11 @@ export default function Challenges() {
                       <Trophy className="h-4 w-4 text-warning" />
                       <span>{challenge.reward}</span>
                     </div>
-                    <Button size="sm" variant="outline">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleViewCertificate(challenge)}
+                    >
                       Ver certificado
                     </Button>
                   </div>
@@ -343,6 +456,17 @@ export default function Challenges() {
               </MobileCard>
             ))}
           </div>
+        )}
+
+        {/* Detail Dialog */}
+        {dialogData && (
+          <DetailDialog
+            isOpen={dialogData.isOpen}
+            onClose={() => setDialogData(null)}
+            title={dialogData.title}
+            type={dialogData.type}
+            data={dialogData.data}
+          />
         )}
       </div>
     </div>

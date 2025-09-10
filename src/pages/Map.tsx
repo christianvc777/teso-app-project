@@ -4,10 +4,14 @@ import { Button } from "@/components/ui/button";
 import { MobileCard, MobileCardContent, MobileCardHeader, MobileCardTitle } from "@/components/ui/mobile-card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function Map() {
   const [activeFilter, setActiveFilter] = useState<"all" | "gyms" | "parks" | "studios" | "pools">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [favorites, setFavorites] = useState<Set<number>>(new Set([2])); // Park is favorited
+  const [mapDialog, setMapDialog] = useState<any>(null);
+  const [contactDialog, setContactDialog] = useState<any>(null);
 
   const wellnessSpaces = [
     {
@@ -172,8 +176,46 @@ export default function Map() {
   });
 
   const toggleFavorite = (spaceId: number) => {
-    // En una app real, esto se sincronizaría con el backend
-    console.log(`Toggle favorite for space ${spaceId}`);
+    setFavorites(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(spaceId)) {
+        newSet.delete(spaceId);
+      } else {
+        newSet.add(spaceId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleShowMap = (space: any) => {
+    setMapDialog({
+      isOpen: true,
+      title: space.name,
+      address: space.address,
+      type: space.type
+    });
+  };
+
+  const handleShowContact = (space: any) => {
+    setContactDialog({
+      isOpen: true,
+      name: space.name,
+      phone: space.phone,
+      address: space.address,
+      hours: space.hours
+    });
+  };
+
+  const handleShowWebsite = (space: any) => {
+    const websites = {
+      "FitLife Gym Centro": "https://bodytech.com.co/",
+      "Yoga & Pilates Studio": "https://yogastudio.com/",
+      "Aqua Center": "https://compensar.com/",
+      "CrossFit Elite Box": "https://crossfit.com/"
+    };
+    
+    const url = websites[space.name as keyof typeof websites] || "https://bodytech.com.co/";
+    window.open(url, '_blank');
   };
 
   return (
@@ -333,19 +375,33 @@ export default function Map() {
                   <div className="flex items-center justify-between pt-2 border-t border-border">
                     <div className="flex space-x-2">
                       {space.phone !== "N/A" && (
-                        <Button variant="outline" size="sm" className="flex items-center space-x-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex items-center space-x-1"
+                          onClick={() => handleShowContact(space)}
+                        >
                           <Phone className="h-3 w-3" />
                           <span className="text-xs">Llamar</span>
                         </Button>
                       )}
                       {space.website !== "N/A" && (
-                        <Button variant="outline" size="sm" className="flex items-center space-x-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex items-center space-x-1"
+                          onClick={() => handleShowWebsite(space)}
+                        >
                           <Globe className="h-3 w-3" />
                           <span className="text-xs">Web</span>
                         </Button>
                       )}
                     </div>
-                    <Button size="sm" className="bg-primary">
+                    <Button 
+                      size="sm" 
+                      className="bg-primary"
+                      onClick={() => handleShowMap(space)}
+                    >
                       <Navigation className="h-3 w-3 mr-1" />
                       Ir
                     </Button>
@@ -365,6 +421,87 @@ export default function Map() {
             </p>
           </div>
         )}
+
+        {/* Map Dialog */}
+        <Dialog open={mapDialog?.isOpen} onOpenChange={() => setMapDialog(null)}>
+          <DialogContent className="max-w-sm mx-auto">
+            <DialogHeader>
+              <DialogTitle>Ubicación - {mapDialog?.title}</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <div className="aspect-video bg-muted rounded-lg flex items-center justify-center mb-4">
+                <div className="text-center">
+                  <MapPin className="h-8 w-8 text-primary mx-auto mb-2" />
+                  <p className="text-sm font-medium">{mapDialog?.title}</p>
+                  <p className="text-xs text-muted-foreground">{mapDialog?.address}</p>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm">
+                <p><strong>Tipo:</strong> {mapDialog?.type}</p>
+                <p><strong>Dirección:</strong> {mapDialog?.address}</p>
+                <p className="text-muted-foreground">
+                  En una aplicación real, aquí se mostraría Google Maps con la ubicación exacta.
+                </p>
+              </div>
+              <Button 
+                className="w-full mt-4" 
+                onClick={() => setMapDialog(null)}
+              >
+                Cerrar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Contact Dialog */}
+        <Dialog open={contactDialog?.isOpen} onOpenChange={() => setContactDialog(null)}>
+          <DialogContent className="max-w-sm mx-auto">
+            <DialogHeader>
+              <DialogTitle>Contacto - {contactDialog?.name}</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <Phone className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium">{contactDialog?.phone}</p>
+                    <p className="text-sm text-muted-foreground">Número de contacto</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <MapPin className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium">{contactDialog?.address}</p>
+                    <p className="text-sm text-muted-foreground">Dirección</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <Clock className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-medium">{contactDialog?.hours}</p>
+                    <p className="text-sm text-muted-foreground">Horarios de atención</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-2 mt-6">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => setContactDialog(null)}
+                >
+                  Cerrar
+                </Button>
+                <Button className="flex-1">
+                  <Phone className="h-4 w-4 mr-1" />
+                  Llamar
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

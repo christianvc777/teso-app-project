@@ -8,7 +8,6 @@ import { CreatePostDialog } from "@/components/CreatePostDialog";
 
 export default function Feed() {
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
-  const [posts, setPosts] = useState(feedPosts);
   const [showCreatePost, setShowCreatePost] = useState(false);
 
   const feedPosts = [
@@ -59,6 +58,8 @@ export default function Feed() {
     }
   ];
 
+  const [posts, setPosts] = useState(feedPosts);
+
   const handleLike = (postId: number) => {
     setLikedPosts(prev => {
       const newSet = new Set(prev);
@@ -100,7 +101,12 @@ export default function Feed() {
             <h1 className="text-xl font-bold">Feed de la Comunidad</h1>
             <p className="text-primary-glow text-sm">Conecta, inspira y crece</p>
           </div>
-          <Button size="sm" variant="secondary" className="bg-white/20 border-white/30 text-white hover:bg-white/30">
+          <Button 
+            size="sm" 
+            variant="secondary" 
+            className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+            onClick={() => setShowCreatePost(true)}
+          >
             <Plus className="h-4 w-4 mr-1" />
             Publicar
           </Button>
@@ -214,6 +220,13 @@ export default function Feed() {
           <p className="text-muted-foreground">¡Estás al día! 🎉</p>
           <p className="text-sm text-muted-foreground mt-1">No hay más publicaciones nuevas</p>
         </div>
+
+        {/* Create Post Dialog */}
+        <CreatePostDialog
+          isOpen={showCreatePost}
+          onClose={() => setShowCreatePost(false)}
+          onSubmit={(newPost) => setPosts(prev => [newPost, ...prev])}
+        />
       </div>
     </div>
   );
